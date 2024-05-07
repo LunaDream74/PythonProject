@@ -14,12 +14,13 @@ head = ['Order','Country','Number of new projects',
         'Adjusted capital (million USD)',
         'Number of times of capital contribution to buy shares',
         'Value of capital contribution, share purchase\n(million USD)','Year']
-
+#fill in blank cells, cells with " -  ", and replace "Liên bang Nga" with "Federal Republic of Russia"
 dfCleaned = df_FDI.fillna(0).replace(to_replace='Liên bang Nga',value='Federal Republic of Russia').replace(' -   ', '0', regex= True)
 dfCleaned = dfCleaned.replace(r'\s*(.*?)\s*', r'\1', regex=True)        #trim blank spaces on both sides
 dfCleaned = dfCleaned.astype('str')                                     #convert all to str
 
 df_Ind_Cl = df_indust.fillna(0).replace(' -   ', '0', regex= True)
+#replace long name with shorter name for convinience
 df_Ind_Cl = df_Ind_Cl.replace(to_replace='Manufacturing and processing industry', value='Manufacturing')
 df_Ind_Cl = df_Ind_Cl.replace(to_replace='Producing and distributing electricity, gas, water, air conditioning', value='electricity, gas, water, air conditioning')
 df_Ind_Cl = df_Ind_Cl.replace(to_replace='Real estate business', value='Real estate')
@@ -61,14 +62,20 @@ dfyears = [df2015,df2016,df2017,df2018,df2019,df2020,df2021,df2022]
 #--------------------------------------------------------------------------------
 '''VN's FDI over the years graph'''
 def graph1():
+        #create a list
         fdi = []
-
+        #add in the fdi list the total FDI of each year
         for year in dfyears:
                 fdi.append(round(sum(year[head[3]])+sum(year[head[5]])+sum(year[head[7]]),3))
 
+        #make a dataframe to use for plotting
+        #with the data from fdi list, and index is the year from 2015-2022
         plotdf = pd.DataFrame({'FDI': fdi}, index= years)
+
+        #plot bar chart
         ax = plotdf.plot(kind='bar', xlabel='Year', ylabel='Million USD', title="VietNam's FDI over the years", rot=0)
 
+        #shows values for each bar
         for c in ax.containers:
                 ax.bar_label(c, fmt=lambda x: f'{x:.0f}' if x > 0 else '', label_type='edge')
 
@@ -77,19 +84,23 @@ def graph1():
 #--------------------------------------------------------------------------------
 '''FDI capital in VN during 2015-2022 graph'''
 def graph2():
+        #create lists
         totalRegisCap = []
         totalAdjCap = []
 
+        #add in the sum of registered captital and adjusted capital of each year into their respective list
         for year in dfyears:
                 totalRegisCap.append(round(sum(year[head[3]]),3))
                 totalAdjCap.append(round(sum(year[head[5]]), 2))
 
+        #make dataframe with 2 kinds of data: totalRegisCap and totalAdjCap. Index is year
         plotdf = pd.DataFrame({'Registered capital': totalRegisCap, 'Adjusted capital': totalAdjCap},
                         index = years)
-
+        #plot bar chart with adjusted capital bar stacked on top of registered capital
         ax = plotdf.plot(kind='bar', stacked=True, xlabel='Year', ylabel='Million USD', rot=0,
                 title='FDI capital in VietNam during 2015-2022')
 
+        #display values of each bar
         for c in ax.containers:
                 ax.bar_label(c, fmt=lambda x: f'{x:.0f}' if x > 0 else '', label_type='center')
 
@@ -97,10 +108,12 @@ def graph2():
 #----------------------------------------------------------------------------------
 '''VN's FDI investors in 2019 graph'''
 def graph3():
+        #create lists
         numProj = []
         fdi = []
         country = []
 
+        #get FDI from each country
         temp1df = df2019.groupby(head[1])[head[3]].sum()        #registered capital of each country
         temp2df = df2019.groupby(head[1])[head[5]].sum()        #adjusted capital of each country
         temp3df = df2019.groupby(head[1])[head[7]].sum()        #capital contribution, share purchase of each country
@@ -118,22 +131,27 @@ def graph3():
                         country.append(FDIdf.index[pos])
                         fdi.append(value)
 
-        #find number of project
-        #find number of project from the top 10 biggest investor above
+        #find number of projects
+        #find number of projects from the top 10 biggest investor above
         for name in country:
                 for index in df2019.index:
                         if df2019[head[1]][index] == name:
                                 numProj.append(df2019[head[2]][index] + df2019[head[4]][index])
-        #find the rest of number of project
+
+        #find the rest of number of projects
         remProj = []
         for index in df2019.index:
                 if df2019[head[1]][index] not in country:
                         remProj.append(df2019[head[2]][index] + df2019[head[4]][index])
 
+        #add "other countries" to country list
         country.append("Other countries")
+
+        #add total fdi and number of projects of other countries to their respective list
         fdi.append(round(sum(x[11:]),3))
         numProj.append(round(sum(remProj)))
 
+        #make a dataframe with index as the country list
         plotdf = pd.DataFrame({'FDI': fdi, 'Number of project': numProj},
                         index= country)
 
@@ -179,9 +197,11 @@ def graph3():
 #----------------------------------------------------------------------------------
 '''top investor graph'''
 def graph4():
+        #make lists
         country = []
         fdi = []
 
+        #find FDI of each country
         temp1df = dfCleaned.groupby(head[1])[head[3]].sum()     #find sum of registered capital of each country
         temp2df = dfCleaned.groupby(head[1])[head[5]].sum()     #find sum of adjusted capital of each country
         temp3df = dfCleaned.groupby(head[1])[head[7]].sum()     #find sum of capital contribution, share purchase of each country
@@ -190,21 +210,27 @@ def graph4():
 
         #sort largest to smallest
         x = sorted(tempdf, reverse=True)
+
         #calculate and find top 10 highest investor
         for pos, value in enumerate(tempdf):
                 if value in x[0:11]:
                         country.append(tempdf.index[pos])
                         fdi.append(value)
+
         #add "other countries" to country list
         country.append('Other countries')
+
         #add total fdi of all other countries to fdi list
         fdi.append(round(sum(x[11:]),3))
 
+        #make a dataframe
         plotdf = pd.DataFrame({'FDI': fdi}, index=country)
 
+        #plot bar chart
         ax = plotdf.plot(kind='bar', xlabel='Investor', ylabel='Million USD',
                         title="VietNam's top FDI investors compare to others over the years", rot=0)
 
+        #display bar value
         for c in ax.containers:
                 ax.bar_label(c, fmt=lambda x: f'{x:.0f}' if x > 0 else '', label_type='edge')
 
@@ -221,12 +247,15 @@ def graph5():
         adjCap = adjCap.tolist()
         share = share.tolist()
 
+        #make a dataframe with 3 data list
         plotdf = pd.DataFrame({'Registered capital': regisCap, 'Adjusted capital': adjCap, 'Capital contribution, share purchase': share},
                         index= years)
 
+        #plot bar chart stacked on top of each other
         ax = plotdf.plot(kind='bar', stacked=True, xlabel='Year', ylabel='Million USD', rot=0,
                 title="Korea's FDI in VietNam during 2015-2022")
 
+        #display bar value
         for c in ax.containers:
                 ax.bar_label(c, fmt=lambda x: f'{x:.0f}' if x > 0 else '', label_type='center')
                 
@@ -234,25 +263,30 @@ def graph5():
 #-----------------------------------------------------------------------------------
 '''Comparison of FDI invested industry between the year 2015 and 2022'''
 def graph6():
+        #make list
         industry15 = []
         fdi15 = []
         industry22 = []
         fdi22 = []
+
         #in 2015
         temp1df = inds15.groupby('Industry')[head[3]].sum()        #find sum of registered capital of each industry
         temp2df = inds15.groupby('Industry')[head[5]].sum()        #find sum of adjusted capital of each industry
         temp3df = inds15.groupby('Industry')[head[7]].sum()        #find sum of capital contribution, share purchase of each industry
 
         inds_15 = temp1df + temp2df + temp3df                  #total fdi of each industry
+
         #sort largest to smallest
         x = sorted(inds_15, reverse=True)
+        #find top 3 most invested industry and their fdi value
         for posi, val in enumerate(inds_15):
                 if val in x[0:3]:
                         industry15.append(inds_15.index[posi])
                         fdi15.append(val)
-        #add "other countries" to country list
+
+        #add "other countries" to 2015 industry list
         industry15.append('Other')
-        #add total fdi of all other countries to fdi list
+        #add total fdi of all other industry
         fdi15.append(round(sum(x[3:]),3))
 
         #in 2022
@@ -261,17 +295,22 @@ def graph6():
         temp6df = inds22.groupby('Industry')[head[7]].sum()        #find sum of capital contribution, share purchase of each industry
 
         inds_22 = temp4df + temp5df + temp6df                  #total fdi of each industry
+
         #sort largest to smallest
         y = sorted(inds_22, reverse=True)
+
+        #find top 3
         for pos, value in enumerate(inds_22):
                 if value in y[0:3]:
                         industry22.append(inds_22.index[pos])
                         fdi22.append(value)
-        #add "other countries" to country list
+
+        #add "other countries" to 2022 industry list
         industry22.append('Other')
-        #add total fdi of all other countries to fdi list
+        #add total fdi of all other industry
         fdi22.append(round(sum(x[3:]),3))
 
+        #make 2 dataframes for 2 pie charts
         df_inds_15 = pd.DataFrame({'industry': industry15, 'FDI total': fdi15})
         df_inds_22 = pd.DataFrame({'industry': industry22, 'FDI total': fdi22})
         
@@ -286,7 +325,9 @@ def graph6():
 #-----------------------------------------------------------------------------------
 '''Viet Nam's FDI influence on GNP over the years'''
 def graph7():
+        #make list
         fdi = []
+
         #since the data is in billion USD and the graph is in million, we have to *1000
         gnp = df_GNP_f[' GNP'] * 1000
 
@@ -297,6 +338,7 @@ def graph7():
         for year in dfyears:
                 fdi.append(round(sum(year[head[3]])+sum(year[head[5]])+sum(year[head[7]]),3))
 
+        #plotting
         plt.plot(years, fdi, '-*', label= 'FDI')
         plt.plot(years, gnp, '-o', label= 'GNP')
         plt.xlabel("Year")
@@ -305,6 +347,7 @@ def graph7():
         plt.title("Viet Nam's FDI influence on GNP over the years")
         plt.show()
 #-----------------------------------------------------------------------------------
+#print menu screen so you can choose to see which graph you want to see
 def menu():
         print("1. Viet Nam's FDI over the years.")
         print("2. FDI capital in Viet Nam over the years.")
@@ -314,7 +357,7 @@ def menu():
         print("6. Comparison of FDI invested industry between the year 2015 and 2022.")
         print("7. Viet Nam's FDI influence on GNP over the years")
         print("0. Exit.")
-
+#main
 def main():
         print("Welcome!!!")
         print("Which graph would you like to see?")
@@ -346,7 +389,7 @@ def main():
                         if option == 7:
                                 os.system('cls')
                                 graph7()
-                        if option == 0:
+                        if option == 0: #exit
                                 os.system('cls')
                                 print("Exiting.....")
                                 print("Goodbye. Thank you for using our code!!")
